@@ -12,8 +12,15 @@ public class DirInitalizer {
 	// Default paths for directories
 	final private static String HOME = "C:/Testify";
 	final private static String PREFERENCES = "C:/Testify/Preferences.txt";
-	final private static String DEFAULTINPUT = "C:/Testify/_Input";
-	final private static String DEFAULTOUTPUT = "C:/Testify/_Output";
+	final private static String DEFAULT_INPUT = "C:/Testify/_Input";
+	final private static String DEFAULT_OUTPUT = "C:/Testify/_Output";
+	final private static String PREFERENCE_FIELDS = "__OUTPUT_TYPE**\n__FORMAT**\n__JOBNAME**\n__QUANTITY**\n__PRINTERNAME**\n";
+	final private static String SOAP_HEADER = "__SOAPHEADER**<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:pub=\"http://published.webservices.loftware.com/\">\r\n"
+			+ "   <soapenv:Header/>\r\n" + "   <soapenv:Body>\r\n" + "      <pub:submitJob>\r\n"
+			+ "         <!--Optional:-->\r\n" + "         <jobFile><![CDATA[\n";
+	final private static String SOAP_FOOTER = "__SOAPFOOTER**]]>\r\n" + "</jobFile>\r\n" + "         <!--Optional:-->\r\n"
+			+ "         <jobType>LXML</jobType>\r\n" + "      </pub:submitJob>\r\n" + "   </soapenv:Body>\r\n"
+			+ "</soapenv:Envelope>\r\n";
 
 	// Dynamic paths for directories
 	String inputFolder = "";
@@ -22,7 +29,7 @@ public class DirInitalizer {
 
 	// constructors
 	public DirInitalizer() {
-		this(DEFAULTINPUT, DEFAULTOUTPUT);
+		this(DEFAULT_INPUT, DEFAULT_OUTPUT);
 	}
 
 	public DirInitalizer(String output, String input) {
@@ -55,7 +62,7 @@ public class DirInitalizer {
 	private void initializePreferences() {
 		if (!fileExists(PREFERENCES)) {
 			createFile(PREFERENCES);
-			// writeToFile();
+			writeToFile(PREFERENCES, PREFERENCE_FIELDS + SOAP_HEADER + SOAP_FOOTER);
 		}
 	}
 
@@ -64,11 +71,11 @@ public class DirInitalizer {
 	 * custom directory.
 	 */
 	private void initializeOutput(String outputDir) {
-		if (!directoryExists(outputDir)) {
+		if (!directoryExists(outputDir))
 			createDir(outputDir);
-		} else {
+		else
 			return;
-		}
+
 	}
 
 	/**
@@ -76,14 +83,24 @@ public class DirInitalizer {
 	 * custom directory.
 	 */
 	private void initializeInput(String inputDir) {
-		if (!directoryExists(inputDir)) {
+		if (!directoryExists(inputDir))
 			createDir(inputDir);
-		} else {
+		else
 			return;
-		}
+
 	}
 
 //--------------- protected methods --------------------------
+
+	/**
+	 * allows for the modification of the prefernces file with custom options TODO:
+	 * finish logic
+	 * 
+	 * @return true if file was successfully changed
+	 */
+	protected boolean modifyPreferences() {
+		return false;
+	}
 
 //---------------- public methods ----------------------------
 
@@ -165,5 +182,51 @@ public class DirInitalizer {
 			System.out.println("An error occurred.");
 			e.printStackTrace();
 		}
+	}
+
+//--------------------- getters and setters --------------------------
+
+	public String getInputFolder() {
+		return inputFolder;
+	}
+
+	public void setInputFolder(String inputFolder) {
+		this.inputFolder = inputFolder;
+	}
+
+	public String getOutputFolder() {
+		return outputFolder;
+	}
+
+	public void setOutputFolder(String outputFolder) {
+		this.outputFolder = outputFolder;
+	}
+
+	public String getHomeFolder() {
+		return homeFolder;
+	}
+
+	public void setHomeFolder(String homeFolder) {
+		this.homeFolder = homeFolder;
+	}
+
+	public static String getHome() {
+		return HOME;
+	}
+
+	public static String getPreferences() {
+		return PREFERENCES;
+	}
+
+	public static String getDefaultinput() {
+		return DEFAULT_INPUT;
+	}
+
+	public static String getDefaultoutput() {
+		return DEFAULT_OUTPUT;
+	}
+
+	public static String getPreferencefields() {
+		return PREFERENCE_FIELDS;
 	}
 }
