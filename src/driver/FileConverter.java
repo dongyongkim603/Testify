@@ -24,7 +24,7 @@ public class FileConverter {
 	// constructor that loads preferences
 	public FileConverter(String preferencesPathString) {
 		if (!preferencesPathString.isEmpty() || !preferencesPathString.equals(null)) {
-			preferenceList = readFile(preferencesPathString);
+			preferenceList = mapPreferences(preferencesPathString);
 		}
 	}
 
@@ -37,25 +37,38 @@ public class FileConverter {
 	 * @param filePathString the absolute path of the file
 	 * @return a String of the file contents
 	 */
-	public HashMap<String, String> readFile(String filePathString) {
+	public HashMap<String, String> mapPreferences(String filePathString) {
 		try {
-			File myObj = new File(filePathString);
-			Scanner myReader = new Scanner(myObj);
+			File file = new File(filePathString);
+			Scanner myReader = new Scanner(file);
 			HashMap<String, String> contents = new HashMap<>();
-			boolean currentFlag = false;
+			
+			//flag used to skip initial put method since K,V are empty
+			boolean firstFlag = true;
+			String key = "" , value = "";
 			while (myReader.hasNextLine()) {
 				String data = myReader.nextLine();
-				String key, value = "";
 				// System.out.println(data);
+				//checks for the __ delimeter signifying option
 				if (data.contains(START_DELIMINATOR)) {
+					if(!firstFlag) {
+						//does a post-put before re-initializing K,V
+						contents.put(key, value);
+						System.out.println("key: " + key + " value: " + value);
+					}
+					value = "";
+					key = "";
 					key = data.substring(data.indexOf(START_DELIMINATOR) + 1, data.indexOf(END_DELIMINATOR));
+					
+					//initial value captured, if there is more data to this option it is caught in the else
 					value = data.substring(data.indexOf(END_DELIMINATOR) + 1, data.length());
-					System.out.println(key + " " + value);
+					firstFlag = false;
 				} else {
 					value += data;
-					System.out.println(value);
 				}
 			}
+			contents.put(key, value);
+			System.out.println("key: " + key + " value: " + value);
 			myReader.close();
 			return contents;
 		} catch (FileNotFoundException e) {
