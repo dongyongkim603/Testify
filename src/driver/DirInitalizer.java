@@ -14,22 +14,16 @@ public class DirInitalizer {
 	final private static String PREFERENCES = "C:/Testify/Preferences.txt";
 	final private static String DEFAULT_INPUT = "C:/Testify/_Input";
 	final private static String DEFAULT_OUTPUT = "C:/Testify/_Output";
-	final private static String PREFERENCE_FIELDS = "__OUTPUT_TYPE**\n__FORMAT**\n__JOBNAME**\n__QUANTITY**\n__PRINTERNAME**\n";
-	final private static String SOAP_HEADER = "__SOAPHEADER**<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:pub=\"http://published.webservices.loftware.com/\">\r\n"
-			+ "   <soapenv:Header/>\r\n" + "   <soapenv:Body>\r\n" + "      <pub:submitJob>\r\n"
-			+ "         <!--Optional:-->\r\n" + "         <jobFile><![CDATA[\n";
-	final private static String SOAP_FOOTER = "__SOAPFOOTER**]]>\r\n" + "</jobFile>\r\n" + "         <!--Optional:-->\r\n"
-			+ "         <jobType>LXML</jobType>\r\n" + "      </pub:submitJob>\r\n" + "   </soapenv:Body>\r\n"
-			+ "</soapenv:Envelope>\r\n";
+	final private static String PREFERENCE_FIELDS = "__FORMAT**\n__JOBNAME**\n__PRINTERNAME**\n__QUANTITY**\n";
 
-	// Dynamic paths for directories
+	// Dynamic paths for directories TODO: add custom path setting ability
 	String inputFolder = "";
 	String outputFolder = "";
 	String homeFolder = "";
 
 	// constructors
 	public DirInitalizer() {
-		this(DEFAULT_INPUT, DEFAULT_OUTPUT);
+		this(DEFAULT_OUTPUT, DEFAULT_INPUT);
 	}
 
 	public DirInitalizer(String output, String input) {
@@ -62,7 +56,7 @@ public class DirInitalizer {
 	private void initializePreferences() {
 		if (!fileExists(PREFERENCES)) {
 			createFile(PREFERENCES);
-			writeToFile(PREFERENCES, PREFERENCE_FIELDS + SOAP_HEADER + SOAP_FOOTER);
+			writeToFile(PREFERENCES, PREFERENCE_FIELDS);
 		}
 	}
 

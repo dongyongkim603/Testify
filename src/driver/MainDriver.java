@@ -3,8 +3,8 @@ package driver;
 public class MainDriver {
 
 	public static void main(String[] args) {
-		DirInitalizer di = new DirInitalizer();
-		FileConverter fc = new FileConverter(di.getPreferences());
+		Menu menu = new Menu();
+		menu.runMenu();
 	}
 	
 	public static void menu() {

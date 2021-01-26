@@ -2,19 +2,30 @@ package driver;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 public class FileConverter {
 
-	final private static String BASE_FORMAT = "<labels _FORMAT=# _JOBNAME=# _QUANTITY=# _PRINTERNAME=#>\r\n"
-			+ "   <label>\r\n" + "<variable name=#></variable>\r\n" + "   </label>\r\n" + "</labels>";
+	final private static String BASE_FORMAT = "<labels _FORMAT= _JOBNAME= _QUANTITY= _PRINTERNAME=>\r\n"
+			+ "   <label>\r\n";
+	final private static String VARIABLE = "<variable name=></variable>\r\n";
+	final private static String END_TAGS = "   </label>\r\n" + "</labels>";
 	final private static String START_DELIMINATOR = "__";
 	final private static String END_DELIMINATOR = "**";
+	final private static String SOAP_HEADER = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:pub=\"http://published.webservices.loftware.com/\">\r\n"
+			+ "   <soapenv:Header/>\r\n" + "   <soapenv:Body>\r\n" + "      <pub:submitJob>\r\n"
+			+ "         <!--Optional:-->\r\n" + "         <jobFile><![CDATA[\n";
+	final private static String SOAP_FOOTER = "]]>\r\n" + "</jobFile>\r\n" + "         <!--Optional:-->\r\n"
+			+ "         <jobType>LXML</jobType>\r\n" + "      </pub:submitJob>\r\n" + "   </soapenv:Body>\r\n"
+			+ "</soapenv:Envelope>\r\n";
 
-	private HashMap<String, String> preferenceList;
-	private String preferences = "";
+	private HashMap<String, String> preferenceMap;
+	private HashMap<String, File> fileMap;
 
 	// default constructor
 	public FileConverter() {
@@ -24,44 +35,46 @@ public class FileConverter {
 	// constructor that loads preferences
 	public FileConverter(String preferencesPathString) {
 		if (!preferencesPathString.isEmpty() || !preferencesPathString.equals(null)) {
-			preferenceList = mapPreferences(preferencesPathString);
+			preferenceMap = mapPreferences(preferencesPathString);
+			fileMap = mapFiles(DirInitalizer.getDefaultinput());
 		}
 	}
 
-//--------------------- public methods --------------------------------
+//--------------------- private methods --------------------------------
 
 	/**
-	 * reads a txt file at a given path and produces a string of the contents of the
-	 * file
+	 * Finds the preferences file and maps the option types with their corresponding
+	 * arguments
 	 * 
 	 * @param filePathString the absolute path of the file
-	 * @return a String of the file contents
+	 * @return a HashMap of the options and arguments
 	 */
-	public HashMap<String, String> mapPreferences(String filePathString) {
+	private HashMap<String, String> mapPreferences(String filePathString) {
 		try {
 			File file = new File(filePathString);
 			Scanner myReader = new Scanner(file);
 			HashMap<String, String> contents = new HashMap<>();
-			
-			//flag used to skip initial put method since K,V are empty
+
+			// flag used to skip initial put method since K,V are empty
 			boolean firstFlag = true;
-			String key = "" , value = "";
+			String key = "", value = "";
 			while (myReader.hasNextLine()) {
 				String data = myReader.nextLine();
 				// System.out.println(data);
-				//checks for the __ delimeter signifying option
+				// checks for the __ delimeter signifying option
 				if (data.contains(START_DELIMINATOR)) {
-					if(!firstFlag) {
-						//does a post-put before re-initializing K,V
+					if (!firstFlag) {
+						// does a post-put before re-initializing K,V
 						contents.put(key, value);
 						System.out.println("key: " + key + " value: " + value);
 					}
 					value = "";
 					key = "";
-					key = data.substring(data.indexOf(START_DELIMINATOR) + 1, data.indexOf(END_DELIMINATOR));
-					
-					//initial value captured, if there is more data to this option it is caught in the else
-					value = data.substring(data.indexOf(END_DELIMINATOR) + 1, data.length());
+					key = data.substring(data.indexOf(START_DELIMINATOR) + 2, data.indexOf(END_DELIMINATOR));
+
+					// initial value captured, if there is more data to this option it is caught in
+					// the else
+					value = data.substring(data.indexOf(END_DELIMINATOR) + 2, data.length());
 					firstFlag = false;
 				} else {
 					value += data;
@@ -72,9 +85,196 @@ public class FileConverter {
 			myReader.close();
 			return contents;
 		} catch (FileNotFoundException e) {
-			System.out.println("An error occurred." + e.getLocalizedMessage());
+			System.out.println("An error occurred. " + e.getLocalizedMessage());
 			e.printStackTrace();
 			return null;
 		}
 	}
-}
+
+//---------------------- public methods----------------------------------
+
+	/**
+	 * Reads a file and creates a string of the contents of the file
+	 * 
+	 * @param filePathString the absolute path of the string
+	 * @return the contents of the file as a string
+	 */
+	public String readFileContents(String filePathString) {
+		StringBuilder sb = new StringBuilder();
+		try {
+			File file = new File(filePathString);
+			Scanner myReader = new Scanner(file);
+			while (myReader.hasNextLine()) {
+				String data = myReader.nextLine();
+				sb.append(data);
+			}
+			return sb.toString();
+		} catch (FileNotFoundException e) {
+			System.out.println("An error occurred. " + e.getLocalizedMessage());
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	/**
+	 * Lists the files in the target folder and uses the full path to create files
+	 * which are then mapped to memory
+	 * 
+	 * @param inputFolder the parent target directory of files
+	 */
+	public HashMap<String, File> mapFiles(String inputFolder) {
+		HashMap<String, File> fileMap = new HashMap<>();
+
+		// Creates an array in which we will store the names of files and directories
+		String[] pathnames;
+		// Creates a new File instance by converting the given pathname string
+		// into an abstract pathname
+		File f = new File(inputFolder);
+
+		// Populates the array with names of files and directories
+		pathnames = f.list();
+
+		// For each pathname in the pathnames array
+		for (String pathname : pathnames) {
+			// Print the names of files and directories
+			System.out.println(pathname);
+			fileMap.put(pathname, (new File(readFileContents(inputFolder + "/" + pathname))));
+		}
+		return fileMap;
+	}
+
+	/**
+	 * prints the contents of a specific key in the file map
+	 * 
+	 * @param key
+	 */
+	public void printFileFromMap(String key) {
+		File file = fileMap.get(key);
+		System.out.println("The contents of the file " + key + " are:\n" + file.toString());
+	}
+
+	/**
+	 * gets the content
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public String fileFromMapToString(String key) {
+		File file = fileMap.get(key);
+		return file.toString();
+	}
+
+	/**
+	 * prints out all of the keys in the file map
+	 */
+	public void printKeys() {
+		System.out.println("The files in the input folder are:\n" + fileMap.keySet());
+	}
+
+	public void printMap(Map<String, String> map) {
+		map.forEach((key, value) -> System.out.println(key + " : " + value));
+	}
+
+	public void printPreferences() {
+		preferenceMap.forEach((key, value) -> System.out.println(key + ":" + value));
+	}
+
+	public Map<String, String> formatFilesFileDrop(Map<String, File> files) {
+		Map<String, String> fDMap = new HashMap<>();
+		ArrayList<String> pList = new ArrayList<>();
+		String baseForm = BASE_FORMAT;
+		StringBuilder sb = new StringBuilder();
+		int prevKey = 0;
+		preferenceMap.forEach((key, value) -> {
+
+//			if (baseForm.contains(key)) {
+//				sb.append(baseForm.substring(prevKey, baseForm.indexOf("=")));
+//			}
+			pList.add(key + "=" + value);
+			files.forEach((k, v) -> {
+				String data = fileFromMapToString(k);
+				int index = data.indexOf("_" + key);
+				sb.append(data.substring(data.indexOf("<labels"), (data.indexOf("<\\labels>"))));
+				fDMap.put(k, sb.toString());
+			});
+		});
+		printMap(fDMap);
+		changeHeader(fDMap);
+		return fDMap;
+	}
+
+	/**
+	 * Takes in a xml string and splits the string at the closing angle bracket ">".
+	 * Then builds the string by appending it to a StringBuilder while also
+	 * appending the "\n" escape character TODO: fix regex
+	 * 
+	 * @param xmlString the XML String
+	 * @return the formated xml String
+	 */
+	public String xmlFormater(String xmlString) {
+		StringBuilder sb = new StringBuilder();
+		String[] split = xmlString.split("\\.>");
+		for (String s : split) {
+			sb.append(s + "\n");
+		}
+		System.out.println(sb); 
+		return sb.toString();
+	}
+	
+	public Map<String, String> changeHeader(Map<String, String> map) {
+		Pattern pattern = Pattern.compile("_\\w=");
+		map.forEach((k,v)->{
+			preferenceMap.forEach((key, value)->{
+				String[] split = v.split("[_]\\w[=]");
+				System.out.println(v);
+				for(String s: split ) {
+					System.out.println("split "+s);
+				}
+			});
+		});
+		return preferenceMap;
+	}
+
+	/**
+	 * takes in a string and writes it to an XML file
+	 * 
+	 * @param xmlSource the String of data to be written
+	 * @param pathName  the String of the full path of where file is to be written
+	 * @throws IOException if file is unable to be written
+	 */
+	public void stringToDom(String xmlSource, String pathName) throws IOException {
+		java.io.FileWriter fw = new java.io.FileWriter(pathName);
+		fw.write(xmlSource);
+		fw.close();
+	}
+
+//-------------------------getters and setters -----------------------------------
+
+	public HashMap<String, String> getPreferenceMap() {
+		return preferenceMap;
+	}
+
+	public void setPreferenceList(HashMap<String, String> preferenceList) {
+		this.preferenceMap = preferenceList;
+	}
+
+	public HashMap<String, File> getFileMap() {
+		return fileMap;
+	}
+
+	public void setFileMap(HashMap<String, File> fileMap) {
+		this.fileMap = fileMap;
+	}
+
+	public static String getBaseFormat() {
+		return BASE_FORMAT;
+	}
+
+	public static String getStartDeliminator() {
+		return START_DELIMINATOR;
+	}
+
+	public static String getEndDeliminator() {
+		return END_DELIMINATOR;
+	}
+}// end of class
