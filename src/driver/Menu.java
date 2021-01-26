@@ -83,8 +83,9 @@ public class Menu {
 			m.forEach((k, v) ->{
 				try {
 					fc.stringToDom(v, DirInitalizer.getDefaultoutput() + "/"+ k);
+					System.out.println("file " + k + " was successfully converted");
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
+					System.out.println(e.getLocalizedMessage());
 					e.printStackTrace();
 				}
 			});

@@ -195,11 +195,17 @@ public class FileConverter {
 				String data = fileFromMapToString(k);
 				int index = data.indexOf("_" + key);
 				sb.append(data.substring(data.indexOf("<labels"), (data.indexOf("<\\labels>"))));
-				fDMap.put(k, sb.toString());
+
+				String updated = formatSubstitution(sb.toString(), k.replace("_Spectrum.txt", ""));
+				updated = jobnameSubstitution(updated);
+				updated = printernameSubstitution(updated);
+
+				System.out.println("\n" + updated);
+				fDMap.put(k, updated);
 			});
 		});
 		printMap(fDMap);
-		changeHeader(fDMap);
+
 		return fDMap;
 	}
 
@@ -217,33 +223,65 @@ public class FileConverter {
 		for (String s : split) {
 			sb.append(s + "\n");
 		}
-		System.out.println(sb); 
+		System.out.println(sb);
 		return sb.toString();
-	}
-	
-	public Map<String, String> changeHeader(Map<String, String> map) {
-		Pattern pattern = Pattern.compile("_\\w=");
-		map.forEach((k,v)->{
-			preferenceMap.forEach((key, value)->{
-				String[] split = v.split("[_]\\w[=]");
-				System.out.println(v);
-				for(String s: split ) {
-					System.out.println("split "+s);
-				}
-			});
-		});
-		return preferenceMap;
 	}
 
 	/**
-	 * takes in a string and writes it to an XML file
+	 * finds the format variable in the Xml label header and produces a new string
+	 * with that replaces the format with the preferences format
+	 * 
+	 * @param xmlString a string of the xml file
+	 * @return an updated xml with new format variable in the header
+	 */
+	public String formatSubstitution(String xmlString, String key) {
+		String format = xmlString.substring(xmlString.indexOf("_FORMAT="), xmlString.indexOf("_JOBNAME="));
+		String formatArgument = format.substring("_FORMAT=".length(), format.length());
+		String updatedForamt = xmlString.replace(formatArgument, "\"" +preferenceMap.get("FORMAT") + key + "\" ");
+		System.out.println("here is the updated format:\n" + updatedForamt + "\n");
+		return updatedForamt;
+	}
+
+	/**
+	 * finds the jobname variable in the Xml label header and produces a new string
+	 * with that replaces the jobname with the preferences format
+	 * 
+	 * @param xmlString a string of the xml file
+	 * @return an updated xml with new jobname variable in the header
+	 */
+	public String jobnameSubstitution(String xmlString) {
+		String format = xmlString.substring(xmlString.indexOf("_JOBNAME="), xmlString.indexOf("_PRINTERNAME="));
+		String formatArgument = format.substring("_JOBNAME=".length(), format.length());
+		String updatedForamt = xmlString.replace(formatArgument, "\"" +preferenceMap.get("JOBNAME") + "\" ");
+		System.out.println("here is the updated format:\n" + updatedForamt + "\n");
+		return updatedForamt;
+	}
+
+	/**
+	 * finds the printername variable in the Xml label header and produces a new
+	 * string with that replaces the printername with the preferences format
+	 * 
+	 * @param xmlString a string of the xml file
+	 * @return an updated xml with new printername variable in the header
+	 */
+	public String printernameSubstitution(String xmlString) {
+		String format = xmlString.substring(xmlString.indexOf("_PRINTERNAME="), xmlString.indexOf("\">"));
+		String formatArgument = format.substring("_PRINTERNAME=".length(), format.length());
+		String updatedForamt = xmlString.replace(formatArgument, "\"" +preferenceMap.get("PRINTERNAME"));
+		System.out.println("here is the updated format:\n" + updatedForamt + "\n");
+		return updatedForamt;
+	}
+
+	/**
+	 * takes in a string and writes it to an XML file. Will replace .txt extension
+	 * therefore must be given an argument of this type of extension
 	 * 
 	 * @param xmlSource the String of data to be written
 	 * @param pathName  the String of the full path of where file is to be written
 	 * @throws IOException if file is unable to be written
 	 */
 	public void stringToDom(String xmlSource, String pathName) throws IOException {
-		java.io.FileWriter fw = new java.io.FileWriter(pathName);
+		java.io.FileWriter fw = new java.io.FileWriter(pathName.replace(".txt", ".xml"));
 		fw.write(xmlSource);
 		fw.close();
 	}
